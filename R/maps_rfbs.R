@@ -70,6 +70,9 @@ getRfbMap <- function(rfbItem, figisapps = TRUE, uppercase = FALSE,
 	countries <- getRfbCountryMembers(rfbItem)
 	if("NOR" %in% countries) countries <- c(countries, "SJM")
 	if("DNK" %in% countries) countries <- c(countries, "GRL")
+	# additional exceptions
+	if("WECAFC" %in% acronym) countries <- c(countries, "GUF")
+	if("ICCAT" %in% acronym) countries <- c(countries, "GUF")
 	
 	countryFilter <- paste0("ISO_3 IN (", paste(paste0("'", countries, "'"), collapse=","), ")")
 	filters <- c("INCLUDE",rfbFilter, "INCLUDE", "INCLUDE", "INCLUDE", countryFilter)
