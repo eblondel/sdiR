@@ -64,7 +64,7 @@ getRfbMap <- function(rfbItem, figisapps = TRUE, uppercase = FALSE,
 	styles <- c("",rfbStyle, "","","", "")
 	styleString <- paste(styles, collapse=",")
 
-	#filters
+	#filters (it may help when the online moniker is not yet updated)
 	acronym <- getRfbAcronym(rfbItem)
 	rfbFilter <- paste0("RFB = '", acronym, "'")
 	countries <- getRfbCountryMembers(rfbItem)
