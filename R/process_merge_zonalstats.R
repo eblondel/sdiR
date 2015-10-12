@@ -1,7 +1,9 @@
 #
-# Scripts to process the results of zonal statistics
-#	@author eblondel
-#	@date 12/10/2015
+# Scripts to process the results of zonal statistics pre-computed
+# with ArcPy Python scripts
+# 
+# @author eblondel
+# @date 12/10/2015
 #
 
 #function to normalize the SST computation results for a given file
