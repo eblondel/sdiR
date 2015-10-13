@@ -38,15 +38,17 @@ normalizeZonalStatistics <- function(file, variable){
 		ZONE_CODE = df[,3],
 		YEAR = rep(year,nrow(df)),
 		MONTH = rep(month,nrow(df)),
-		df[,4:11],
+		df[,6:11],
 		stringsAsFactors = FALSE)
 	df.names <- colnames(df)
 		
 	#normalize
-	output <- reshape(df, idvar = df.names[1:7], varying = df.names[8:15],  times = df.names[8:15],
+	statistics <- c("MIN", "MAX", "RANGE", "MEAN" , "STD", "SUM") 
+	output <- reshape(df, idvar = df.names[1:7], varying = statistics,  times = statistics,
 				timevar = "STATISTIC", v.names = "VALUE", direction = "long")
 	row.names(output) <- 1:nrow(output)
 	return(output)
+
 }
 
 #global function to normalize and merge all SST computation results
@@ -66,14 +68,14 @@ fetchZonalStatistics <- function(dir = getwd(), variable){
 
 #global function to merge results for several variables
 fetchZonalStatisticsAll <- function(dir = getwd(), variables = c("SST", "NPP")){
-	
 	out <- do.call("rbind", lapply(
 		variables,
 		function(x) { fetchZonalStatistics(dir, x)}))
-	
+	out <- cbind(RowID = 1:nrow(out), out)
+	return(out)
 }
 
 
 #run the process
 result <- fetchZonalStatisticsAll()
-write.csv(result, file = "ZonalStatistics.csv")
+write.csv(result, file = "ZonalStatistics.csv", row.names = FALSE)
