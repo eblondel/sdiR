@@ -8,12 +8,9 @@
 
 #function to normalize the SST computation results for a given file
 normalizeZonalStatistics <- function(file, variable){
-	
-	#process variable
-	prefix <- paste0("monthly", tolower(variable), "a")
 
 	#process time dimension
-	record <- unlist(strsplit(unlist(strsplit(file, prefix))[2],".csv"))[1]
+	record <- unlist(strsplit(unlist(strsplit(file,substr(file,1,as.numeric(regexpr("monthly",file))+10)))[2],".csv"))[1]
 	year <- as.numeric(substr(record, 1, 4))
 	isLeapYear <- (year%%4 == 0) & ((year%%100 != 0) | (year%%400 == 0))
 	month <- as.numeric(substr(record, 5, nchar(record)))
@@ -50,7 +47,7 @@ normalizeZonalStatistics <- function(file, variable){
 #global function to normalize and merge all SST computation results
 fetchZonalStatistics <- function(dir = getwd(), variable){
 	
-	#prefix
+	#variable
 	if(!(variable %in% c("SST", "NPP"))) stop("Invalid variable (expected 'SST' or 'NPP')")
 	
 	#list files
