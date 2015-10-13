@@ -9,18 +9,19 @@
 #function to normalize the SST computation results for a given file
 normalizeZonalStatistics <- function(file, variable){
 
-	#process time dimension
+	#extract record from name
 	filename <- unlist(strsplit(file,"/"))
 	filename <- filename[length(filename)]
 	record <- substr(filename, as.numeric(regexpr("[0-9]+",filename)), nchar(filename)-4)
+	
+	#process time dimension	
 	year <- as.numeric(substr(record, 1, 4))
 	isLeapYear <- (year%%4 == 0) & ((year%%100 != 0) | (year%%400 == 0))
 	month <- as.numeric(substr(record, 5, nchar(record)))
-	if(isLeapYear & month != 1) month = month - 1
+	if(isLeapYear & !(month %in% c(1,32))) month = month - 1
 	month <- switch(as.character(month), "1" = 1, "32" = 2, "60" = 3, "91" = 4,
 							 "121" = 5, "152" = 6, "182" = 7, "213" = 8,
 			    				 "244" = 9, "274" = 10, "305" = 11, "335" = 12)
-
 	#read data
 	df <- read.csv(file)
 	
@@ -29,6 +30,7 @@ normalizeZonalStatistics <- function(file, variable){
 		do.call("rbind",strsplit(as.character(df[,"SSTNPPCODE"]),"_")),
 		stringsAsFactors = FALSE
 	)
+
 	colnames(areas) <- c("EEZ", "LME", "FSA")
 	df <- cbind(
 		VARIABLE = rep(variable, nrow(df)),
@@ -36,7 +38,8 @@ normalizeZonalStatistics <- function(file, variable){
 		ZONE_CODE = df[,3],
 		YEAR = rep(year,nrow(df)),
 		MONTH = rep(month,nrow(df)),
-		df[,4:11])
+		df[,4:11],
+		stringsAsFactors = FALSE)
 	df.names <- colnames(df)
 		
 	#normalize
