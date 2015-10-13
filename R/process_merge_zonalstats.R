@@ -10,7 +10,9 @@
 normalizeZonalStatistics <- function(file, variable){
 
 	#process time dimension
-	record <- unlist(strsplit(unlist(strsplit(file,substr(file,1,as.numeric(regexpr("monthly",file))+10)))[2],".csv"))[1]
+	filename <- unlist(strsplit(file,"/"))
+	filename <- filename[length(filename)]
+	record <- substr(filename, as.numeric(regexpr("[0-9]+",filename)), nchar(filename)-4)
 	year <- as.numeric(substr(record, 1, 4))
 	isLeapYear <- (year%%4 == 0) & ((year%%100 != 0) | (year%%400 == 0))
 	month <- as.numeric(substr(record, 5, nchar(record)))
