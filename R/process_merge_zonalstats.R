@@ -6,6 +6,8 @@
 # @date 12/10/2015
 #
 
+
+# setwd("") Uncomment to setup the working directory; remember to escape "\" in the windows path with "\\"
 #function to normalize the SST computation results for a given file
 normalizeZonalStatistics <- function(file, variable){
 
