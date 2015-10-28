@@ -57,4 +57,4 @@ mapping <- data.frame(
 	FLOD_URL = sapply(layers, getFLODUrl),
 	stringsAsFactors = FALSE
 )
-write.table(mapping, "mapping.csv", sep=",")
+write.table(mapping, "mapping.csv", sep=",", row.names = FALSE)
