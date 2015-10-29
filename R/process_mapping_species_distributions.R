@@ -1,7 +1,7 @@
 #
 # Easy script to get species distribution mappings including:
 # - identifiers: 3-alpha code, FigisId
-# - layername
+# - layer name, title
 # - urls: metadata URL (html), factsheet URL (html), FLOD URL
 #
 # @author eblondel
@@ -19,6 +19,12 @@ layers <- getNodeSet(xml, "//ns:Layer[@queryable='1']", c(ns = "http://www.openg
 getName <- function(x){
 	name = xmlValue(getNodeSet(xmlDoc(x),"//ns:Name",c(ns = "http://www.opengis.net/wms"))[[1]])
 	return(name)
+}
+
+#get title
+getTitle <- function(x){
+	title <- xmlValue(getNodeSet(xmlDoc(x), "//ns:Title", c(ns = "http://www.opengis.net/wms"))[[1]])
+	return(title)
 }
 
 #get factsheet link
@@ -45,13 +51,16 @@ layerNames <- sapply(layers, getName)
 speciesCodes <- sapply(strsplit(layerNames,"SPECIES_DIST_"), function(x){x[2]})
 factsheetUrls <- sapply(layers, getFactsheet)
 figisIds <- sapply(strsplit(factsheetUrls, "http://www.fao.org/fishery/species/"), function(x){x[2]})
-
+layerTitles <- sapply(layers, getTitle)
+speciesNames <- sapply(strsplit(layerTitles, "of "), function(x){x[2]})
 
 #output
 mapping <- data.frame(
 	ALPHACODE = speciesCodes,
 	FIGISID = figisIds,
+	NAME = speciesNames,
 	LAYER = layerNames,
+	TITLE = layerTitles,
 	METADATA_URL = sapply(layers, getMetadataUrl),
 	FACTSHEET_URL = factsheetUrls,
 	FLOD_URL = sapply(layers, getFLODUrl),
