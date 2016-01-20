@@ -2,6 +2,7 @@
 # Scripts to manage the fishing areas GIS dataset
 # This includes the production of:
 # - normalized dataset FAO_AREAS (not erased)
+# - normalized dataset FAO_AREAS_SINGLEPART (with Polygon features instead of MultiPolygon)
 # - normalized dataset and erased by continent FAO_AREAS_ERASE
 # 
 # The derivate products handle the status of eac area, whether it is
@@ -10,7 +11,11 @@
 # @author eblondel
 # @date 2015/10/27
 #
-
+require(sp)
+require(rgdal)
+require(rgeos)
+require(RFigisGeo)
+require(cleangeo)
 
 #get fishery statistical area levels
 getFisheryStatAreas <- function(){
@@ -195,7 +200,6 @@ eraseFisheryStatAreas <- function(features, eraser, cleanGeom = TRUE){
 	return(out)
 }
 
-
 #routine
 if(TRUE){
 
@@ -207,9 +211,12 @@ if(TRUE){
 	result <- manageFisheryStatAreas(data)
 	exportFeatures(result, file.path = path, file.name = "FAO_AREAS")
 	
+	#compute and export 'FAO_AREAS_SINGLEPART' ('FAO_AREAS' with Polygons instead of MultiPolygons)
+	result_singlepart <- disaggregate(result)
+	exportFeatures(result_singlepart, file.path = path, file.name = "FAO_AREAS_SINGLEPART")
+	
 	#compute and export 'FAO_AREAS_ERASE'
 	continent <- readWFS("http://figisapps.fao.org/figis/geoserver.dv.2/fifao/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=fifao:UN_CONTINENT2")
 	result_erased <- eraseFisheryStatAreas(result, continent)
 	exportFeatures(result_erased, file.path = path, file.name = "FAO_AREAS_ERASE")
-	
 }
