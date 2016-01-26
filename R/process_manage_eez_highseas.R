@@ -26,3 +26,16 @@ proj4string(p) <- proj4string(sp2)
 
 #difference
 hs <- gDifference(p, sp2)
+hsp <- SpatialPolygonsDataFrame(hs, data = data.frame(mrgid = "0", name = "no eez (high seas)", category = "HIGHSEA", stringsAsFactors = FALSE))
+
+#eez data
+eez <- readWFS("http://geo.vliz.be/geoserver/MarineRegions/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=MarineRegions:eez")
+eez@data <- cbind(eez@data[,c("mrgid","eez")], category = "EEZ")
+names(eez@data) <- c("mrgid", "name", "category")
+
+#output
+out <- spRbind(hsp, eez)
+out <- clgeo_Clean(out)
+
+#export
+exportFeatures(out, file.path = "your path", file.name = "EEZ_HIGHSEAS")
