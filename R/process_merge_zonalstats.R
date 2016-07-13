@@ -58,7 +58,7 @@ fetchZonalStatistics <- function(dir = getwd(), variable){
 	
 	#variable
 	#modified to account for different data using other NPP models
-	if(!(variable %in% c("CBPM", "EPPL", "SST", "NPP"))) stop("Invalid variable (expected 'CBPM', 'EPPL', 'SST' or 'NPP')")
+	if(!(variable %in% c("CBPM", "EPPL", "SST", "NPP", "CHL"))) stop("Invalid variable (expected 'CBPM', 'EPPL', 'SST' or 'NPP' or 'CHL')")
 	
 	#list files
 	files <- list.files(path = dir, full.names = TRUE, ignore.case = TRUE,
@@ -71,7 +71,7 @@ fetchZonalStatistics <- function(dir = getwd(), variable){
 
 #global function to merge results for several variables
 #modified to account for different data using other NPP models
-fetchZonalStatisticsAll <- function(dir = getwd(), variables = c("CBPM", "EPPL", "SST", "NPP")){
+fetchZonalStatisticsAll <- function(dir = getwd(), variables = c("CBPM", "EPPL", "SST", "NPP", "CHL")){
 	out <- do.call("rbind", lapply(
 		variables,
 		function(x) { fetchZonalStatistics(dir, x)}))
