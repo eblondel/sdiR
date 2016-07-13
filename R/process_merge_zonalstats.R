@@ -27,9 +27,9 @@ normalizeZonalStatistics <- function(file, variable){
 	#read data
 	df <- read.csv(file)
 	
-	#extract area codes
+	#extract area codes (NOTE: a new code combination is used called SSTNPPCODN in place of the orginal SSTNPPCODE)
 	areas <- as.data.frame(
-		do.call("rbind",strsplit(as.character(df[,"SSTNPPCODE"]),"_")),
+		do.call("rbind",strsplit(as.character(df[,"SSTNPPCODN"]),"_")),
 		stringsAsFactors = FALSE
 	)
 
