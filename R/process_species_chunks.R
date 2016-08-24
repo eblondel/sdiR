@@ -14,13 +14,13 @@ buildChunks <- function(array, n = 10, toXML = TRUE){
 	chunks <- split(array, ceiling(seq_along(array)/20))
 	if(toXML){
 		chunks <- lapply(chunks,function(chunk.list){
-			return(do.call("paste",lapply(chunk.list, function(x){paste("<string>",x,"</string>")})),collapse="")
+			return(paste0(lapply(chunk.list, function(x){paste0("<string>",x,"</string>")}),collapse=""))
 		})
 	}
 	return(chunks)
 }
 
-if(FALSE){
+if(TRUE){
 	require(XML)
 	speciesXML <- xmlParse("http://www.fao.org/figis/geoserver/factsheets/js/specieslist.xml")
 	species <- sapply(getNodeSet(speciesXML, "//item"), xmlGetAttr,"a3c")
