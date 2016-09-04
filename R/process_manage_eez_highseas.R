@@ -7,6 +7,7 @@
 #
 
 require(RFigisGeo)
+require(maptools) #for spRbind
 require(cleangeo)
 
 #read and clean EEZ data
