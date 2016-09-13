@@ -154,3 +154,11 @@ write.table(result, "spread_output.csv", row.names = FALSE, col.names = TRUE, se
 processEndingTime <- Sys.time()
 cat(paste0("Started at: ", as.character(processEndingTime),"\n"))
 cat(paste0("Computation completed in ", as.character(round(as.numeric(processEndingTime - processStartingTime),3))," seconds!\n"))
+
+#test case to validate stats
+#French catches in 1998 in FAO major area 34
+testcase <- result[ result$ISO_3_CODE == "FRA"
+			& result$FIC_SYS_CATCH_AREA == 34
+			& result$YR_ITEM == 1998,]
+cat(paste0("Initial catch value to reallocate = ", unique(testcase$SumOfQUANTITY),"\n"))
+cat(paste0("Sum of reallocated values = ", sum(testcase$spread),"\n"))
