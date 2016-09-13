@@ -1,6 +1,6 @@
 #
 # Scripts to experiment SPREAD-like algorithm for catch statistics of
-# distant flagstates, based on % of catches by coastal flagstates, by 
+# distant countries, based on % of catches by coastal countries, by 
 # FAO major area / year
 # 
 # @author eblondel
@@ -36,8 +36,8 @@ intersects <- read.table("EEZ_FA_LMErcl.txt", h=T,sep="\t")
 # @title computeWprobByDims
 # @description
 # unit function to compute by area/year the probability model which will give
-# the target area (represented by a combination of FAO area, LME (reclassified) and 
-# EEZ (reclassified as ISO3 code)
+# probability values by target area (represented by a combination of FAO area,
+# LME (reclassified) and EEZ (reclassified as ISO3 code)
 # @param intersects an object of class "data.frame" giving the intersects
 # @param stats an object of class "data.frame" giving the catch statistics
 # @param area an object of class "integer" or "character" (FAO major area)
@@ -68,8 +68,8 @@ computeWprobByDims <- function(intersects, stats, area, year){
 
 # @title computeWprob
 # @description
-# function to compute the probability model which will give
-# the target area (represented by a combination of FAO area, LME (reclassified) and 
+# function to compute the probability model which will give probability values by
+# target area (represented by a combination of FAO area, LME (reclassified) and 
 # EEZ (reclassified as ISO3 code)
 # @param intersects an object of class "data.frame" giving the intersects
 # @param stats an object of class "data.frame" giving the catch statistics
@@ -114,18 +114,43 @@ getForeignCatches <- function(intersects, stats){
 #execution & outputs
 #==========================================================================
 
+processStartingTime <- Sys.time()
+cat(paste0("Started at: ", as.character(processStartingTime),"\n"))
+
 #step 1: compute table of probabilities based on coastal flagstate catch %
 #-------
+cat("Building probability model for reallocation...\n")
 #compute probabilities
 wprobs <- computeWprob(intersects, stats)
 
 #validation of probabilities
 aggregate(wprobs$wprob, by = as.list(wprobs[c("F_AREA","YR_ITEM")]), FUN = "sum")
 
-#step 2: extract catches for distant flagstates
+#step 2: extract catches for distant countries
 #-------
+cat("Grabing foreign catches...\n")
 foreign_catches <- getForeignCatches(intersects, stats)
 
 #step 3: reallocate based on probability model computed in step 1
+#(the function "reallocate" is from RFigisGeo package)
 #-------
-#TODO
+cat("Reallocating statistical data...\n")
+result <- reallocate(
+		x = foreign_catches,
+		y = wprobs,
+		area.x = "FIC_SYS_CATCH_AREA",
+		area.y = "F_AREA",
+		by.x = "YR_ITEM",
+		by.y = "YR_ITEM",
+		data = "SumOfQUANTITY",
+		warea = NULL,
+		wprob = "wprob",
+		aggregates = NULL
+)
+
+#csv output
+write.table(result, "spread_output.csv", row.names = FALSE, col.names = TRUE, sep=",", dec=".")
+
+processEndingTime <- Sys.time()
+cat(paste0("Started at: ", as.character(processEndingTime),"\n"))
+cat(paste0("Computation completed in ", as.character(round(as.numeric(processEndingTime - processStartingTime),3))," seconds!\n"))
