@@ -15,12 +15,6 @@ options(stringsAsFactors = FALSE)
 
 #package requirements
 #==========================================================================
-if(!require(RFigisGeo)){
-	require(devtools)
-	install_github("openfigis/RFigisGeo")
-	require(RFigisGeo)
-}
-
 if(!require(spread)){
 	require(devtools)
 	install_github("eblondel/spread")
