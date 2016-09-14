@@ -24,7 +24,9 @@ if(!require(spread)){
 #inputs
 #==========================================================================
 #read catch statistics (normalized form)
-stats <- read.table("CaptureView.csv", h=T,sep=",")
+#the file "CaptureView-modified.csv" is a result of a first data reallocation
+#exercise provided by the script 'spread_old_flagstates.R'
+stats <- read.table("CaptureView-modified.csv", h=T,sep=",")
 
 #read intersects
 intersects <- read.table("EEZ_FA_LMErcl.txt", h=T,sep="\t")
