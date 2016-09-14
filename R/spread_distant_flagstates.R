@@ -15,7 +15,17 @@ options(stringsAsFactors = FALSE)
 
 #package requirements
 #==========================================================================
-require(RFigisGeo)
+if(!require(RFigisGeo)){
+	require(devtools)
+	install_github("openfigis/RFigisGeo")
+	require(RFigisGeo)
+}
+
+if(!require(spread)){
+	require(devtools)
+	install_github("eblondel/spread")
+	require(spread)
+}
 
 #inputs
 #==========================================================================
@@ -132,10 +142,10 @@ cat("Grabing foreign catches...\n")
 foreign_catches <- getForeignCatches(intersects, stats)
 
 #step 3: reallocate based on probability model computed in step 1
-#(the function "reallocate" is from RFigisGeo package)
+#(the function "reallocate" is moved to 'spread' package)
 #-------
 cat("Reallocating statistical data...\n")
-result <- reallocate(
+result <- spread::reallocate(
 		x = foreign_catches,
 		y = wprobs,
 		area.x = "FIC_SYS_CATCH_AREA",
