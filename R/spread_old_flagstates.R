@@ -11,7 +11,8 @@
 
 #working directory & environment
 #==========================================================================
-setwd("D:/Mes documents/Documents/DEV/R/sdi/20160913_SPREAD")
+#set your working dir here using setwd()
+#setwd("D:/Mes documents/Documents/DEV/R/sdi/20160913_SPREAD")
 options(stringsAsFactors = FALSE)
 
 #package requirements
@@ -46,7 +47,9 @@ flagParams = list(
 	#)
 )
 
-
+#set roundingDecimals set to NULL if you don't want to round at all
+#roundingDecimals <- NULL
+roundingDecimals <- 0
 
 #business functions
 #==========================================================================
@@ -107,6 +110,7 @@ reallocateOldFlagstateCatches <- function(stats, flagstates, data.period = c(195
 	#adapt structure for merging with other stats
 	spread.stats$ISO_3_CODE <- spread.stats$ISO_3_CODE.y
 	spread.stats$SumOfQUANTITY <- spread.stats$spread
+	if(!is.null(roundingDecimals)) spread.stats$SumOfQUANTITY <- round(spread.stats$SumOfQUANTITY, roundingDecimals)
 	spread.stats <- spread.stats[,colnames(stats)]
 
 	#remove old stats
@@ -170,6 +174,7 @@ result[result$ISO_3_CODE == "SUN",]
 
 #test case to validate stats
 #USSR catches in 1985 in FAO major area 34
+#note that in case of 'rounding' you may have slightly different values
 src <- stats[stats$FIC_SYS_CATCH_AREA == 34 & stats$YR_ITEM == 1985 & stats$ISO_3_CODE == flagParams[[1]]$old,]
 trg <- result[result$FIC_SYS_CATCH_AREA == 34 & result$YR_ITEM == 1985 & result$ISO_3_CODE %in% flagParams[[1]]$new,]
 cat(paste0("Initial catch value to reallocate = ", src$SumOfQUANTITY,"\n"))
