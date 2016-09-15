@@ -10,7 +10,8 @@
 
 #working directory & environment
 #==========================================================================
-setwd("D:/Mes documents/Documents/DEV/R/sdi/20160913_SPREAD")
+#set your working dir here with setwd()
+#setwd("D:/Mes documents/Documents/DEV/R/sdi/20160913_SPREAD")
 options(stringsAsFactors = FALSE)
 
 #package requirements
@@ -27,9 +28,14 @@ if(!require(spread)){
 #the file "CaptureView-modified.csv" is a result of a first data reallocation
 #exercise provided by the script 'spread_old_flagstates.R'
 stats <- read.table("CaptureView-modified.csv", h=T,sep=",")
+stats <- stats[stats$SumOfQUANTITY > 0,]
 
 #read intersects
 intersects <- read.table("EEZ_FA_LMErcl.txt", h=T,sep="\t")
+
+#set roundingDecimals set to NULL if you don't want to round at all
+#roundingDecimals <- NULL
+roundingDecimals <- 0
 
 #business functions
 #==========================================================================
@@ -56,8 +62,7 @@ computeWprobByDims <- function(intersects, stats, area, year){
 	flagstates <- unique(area.intersects[,"ISO_3digit"])
 	out.stats <- stats[stats$FIC_SYS_CATCH_AREA == area
 						& stats$YR_ITEM == year
-						& stats$ISO_3_CODE %in% flagstates
-						& stats$SumOfQUANTITY > 0,]
+						& stats$ISO_3_CODE %in% flagstates,]
 	
 	#compute wprob
 	out.stats$wprob <- out.stats$SumOfQUANTITY / sum(out.stats$SumOfQUANTITY)
@@ -153,6 +158,7 @@ result <- spread::reallocate(
 		wprob = "wprob",
 		aggregates = NULL
 )
+if(!is.null(roundingDecimals)) result$spread <- round(result$spread, roundingDecimals)
 
 #csv output
 write.table(result, "spread_output.csv", row.names = FALSE, col.names = TRUE, sep=",", dec=".")
@@ -163,6 +169,7 @@ cat(paste0("Computation completed in ", as.character(round(as.numeric(processEnd
 
 #test case to validate stats
 #French catches in 1998 in FAO major area 34
+#note that in case of 'rounding' you may have slightly different values
 testcase <- result[ result$ISO_3_CODE == "FRA"
 			& result$FIC_SYS_CATCH_AREA == 34
 			& result$YR_ITEM == 1998,]
