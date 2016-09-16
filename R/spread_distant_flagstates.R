@@ -31,7 +31,7 @@ stats <- read.table("CaptureView-modified.csv", h=T,sep=",")
 stats <- stats[stats$SumOfQUANTITY > 0,]
 
 #read intersects
-intersects <- read.table("EEZ_FA_LMErcl.txt", h=T,sep="\t")
+intersects <- read.table("EEZ_FA_LMErcl.txt", h=T,sep=",")
 
 #set roundingDecimals set to NULL if you don't want to round at all
 #roundingDecimals <- NULL
