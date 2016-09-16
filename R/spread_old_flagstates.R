@@ -164,7 +164,7 @@ write.table(result, "CaptureView-modified.csv", row.names = FALSE, col.names = T
 #ending
 processEndingTime <- Sys.time()
 cat(paste0("Started at: ", as.character(processEndingTime),"\n"))
-cat(paste0("Computation completed in ", as.character(round(as.numeric(processEndingTime - processStartingTime),3))," seconds!\n"))
+cat(paste0("Computation completed in ", as.character(round(as.numeric(as.integer(processEndingTime) - as.integer(processStartingTime)),3))," seconds!\n"))
 
 #testcases
 #---------
