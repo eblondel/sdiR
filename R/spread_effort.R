@@ -31,7 +31,7 @@ effort_long$time <- as.integer(sapply(1:nrow(effort_long), function(i){unlist(st
 
 #read intersects
 catches <- read.table("spread_output.csv", h=T, sep=",")
-catches <- catches[,-(16:20)] #remove previous spread computation fields
+catches <- catches[,-(21:23)] #remove previous spread computation fields
 catches$wprob <- catches$spread
 catches$spread <- NULL
 
