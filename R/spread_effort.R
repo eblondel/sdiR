@@ -69,7 +69,7 @@ write.table(result, "spread_output_effort.csv", row.names = FALSE, col.names = T
 
 processEndingTime <- Sys.time()
 cat(paste0("Started at: ", as.character(processEndingTime),"\n"))
-cat(paste0("Computation completed in ", as.character(round(as.numeric(processEndingTime - processStartingTime),3))," seconds!\n"))
+cat(paste0("Computation completed in ", as.character(round(as.numeric(as.integer(processEndingTime) - as.integer(processStartingTime)),3))," seconds!\n"))
 
 #test case to validate stats
 #note that in case of 'rounding' you may have slightly different values
