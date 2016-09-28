@@ -203,4 +203,4 @@ cat(paste0("Sum of reallocated values = ", sum(trg$SumOfQUANTITY),"\n"))
 	
 #check that SCG catches were assigned to MNE
 stats[stats$YR_ITEM == 1992 & stats$ISO_3_CODE == "SCG",]
-result[result$YR_ITEM == 1992 & stats$ISO_3_CODE == "MNE",]
+result[result$YR_ITEM == 1992 & result$ISO_3_CODE == "MNE",]
