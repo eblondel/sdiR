@@ -15,6 +15,9 @@
 #setwd("D:/Mes documents/Documents/DEV/R/sdi/20160913_SPREAD")
 options(stringsAsFactors = FALSE)
 
+#clean environment
+rm(list = ls())
+
 #package requirements
 #==========================================================================
 if(!require(spread)){
@@ -26,25 +29,34 @@ if(!require(spread)){
 #inputs
 #==========================================================================
 #read catch statistics (normalized form)
-stats <- read.table("CaptureView.csv", h=T,sep=",")
+stats <- read.table("CaptureView_noEpipelagic.csv", h=T,sep=",")
 stats <- stats[stats$SumOfQUANTITY > 0,]
 
 
 #params for splitting catches from old flagstaes
 #The "flagParams" is a simple object composed by a list of flagstate definitions.
-#	Each 'definition' defines the 'old' flagstate (ISO3 code) and the 'new'
-#	flagstates (resulting from the splitting)
+#	Each 'definition' must include the following parameters:
+#		@param old object of class "character" the 'old' flagstate (ISO3 code)
+#		@param new object of class "character" the 'new' flagstates resulting from the splitting (ISO3 codes)
+#		@param data.period object of class "integer" giving the start/end years of the range targeted for the
+# 			   data reallocation.
+# 		@param wprob.period object of class "integer" giving the start/end years of the range chosen to compute
+#			   the relative contributions of catch of each new flagstate.
 # Note: in R the simplest way to define an 'object' with some properties is
 # to use the "list" primitive.
 flagParams = list(
 	list(
 		old = "SUN",
-		new = c("EST", "LVA", "LTU", "UKR", "GEO", "RUS")
+		new = c("EST", "LVA", "LTU", "UKR", "GEO", "RUS"),
+		data.period = c(1950,1987),
+		wprob.period = c(1988,1992)
 	)
-	#,list(
-	#	old = "TEST",
-	#	new = c("TEST1", "TEST2")
-	#)
+	,list(
+		old = "YUG",
+		new = c("SVN", "HRV", "SCG", "BIH"),
+		data.period = c(1950,1991),
+		wprob.period = c(1992,1996)
+	)
 )
 
 #set roundingDecimals set to NULL if you don't want to round at all
@@ -59,20 +71,26 @@ roundingDecimals <- 0
 # using the contributions of catches of the new flagstates resulting from the country split..
 # @param stats an object of class "data.frame" giving the catch statistics
 # @param flagstates an object of class "list" giving the old flagstate and list of new flagstates
-# (with ISO codes) in the following form list(old = "TEST", new = c("TEST1", "TEST2"))
-# @param data.period object of class "integer" giving the start/end years of the range targeted for the
-# data reallocation.
-# @param wprob.period object of class "integer" giving the start/end years of the range chosen to compute
-# the relative contributions of catch of each new flagstate. Default value is c(1988,1992)
-# @return an object of class "data.frame" giving reallocated statistics for the data.period selected
+# (with ISO codes) in the following form:
+#	list(
+#		old = "TEST",
+#		new = c("TEST1", "TEST2"),
+#		data.period = c(startYear1,endYear1),
+#		wprob.period = c(startYear2,endYear2)
+#	)
+# @return an object of class "data.frame" giving reallocated statistics for the data.period specified
 # and the new flagstates defined in the 'flagstates' argument
 #
-reallocateOldFlagstateCatches <- function(stats, flagstates, data.period = c(1950,1987), wprob.period = c(1988,1992)){
+reallocateOldFlagstateCatches <- function(stats, flagstates){
+
+	cat(sprintf("Reallocate catches of '%s' to [%s] \n",flagstates$old, paste(flagstates$new,collapse=",")))
+	cat(sprintf("Reallocation data period = [%s] \n", paste(flagstates$data.period,collapse=",")))
+	cat(sprintf("Reallocation wprob period = [%s] \n", paste(flagstates$wprob.period,collapse=",")))
 	
 	#get data for new flagstates and the selected period
 	ref.stats <- stats[stats$ISO_3_CODE %in% flagstates$new
-					 & stats$YR_ITEM >= wprob.period[1]
-					 & stats$YR_ITEM <= wprob.period[2],]
+					 & stats$YR_ITEM >= flagstates$wprob.period[1]
+					 & stats$YR_ITEM <= flagstates$wprob.period[2],]
 	ref.stats <- aggregate(ref.stats$SumOfQUANTITY, by = as.list(ref.stats[,c("FIC_SYS_CATCH_AREA","ISO_3_CODE")]), FUN = "sum")
 	
 	#calculate contribs
@@ -92,8 +110,8 @@ reallocateOldFlagstateCatches <- function(stats, flagstates, data.period = c(195
 	
 	#calculate new stats
 	src.idx <- which(stats$ISO_3_CODE == flagstates$old
-					 & stats$YR_ITEM >= data.period[1]
-					 & stats$YR_ITEM <= data.period[2])
+					 & stats$YR_ITEM >= flagstates$data.period[1]
+					 & stats$YR_ITEM <= flagstates$data.period[2])
 	src.stats <- stats[src.idx,]
 	spread.stats <- spread::reallocate(
 		x = src.stats,
@@ -123,22 +141,18 @@ reallocateOldFlagstateCatches <- function(stats, flagstates, data.period = c(195
 # @param params an object of class "list" giving the list of flagstate definitions. Each flagstate definition
 # is itself a list object giving the old flagstate and list of new flagstates. An example of params object would be
 #	list(
-#		list(old = "TEST1", new = c("TEST1a", "TEST1b")),
-#		list(old = "TEST2", new = c("TEST2a", "TEST2b"))
+#		list(old = "TEST1", new = c("TEST1a", "TEST1b"), data.period = c(startYear1,endYear1), wprob.period = c(startYear2,endYear2)),
+#		list(old = "TEST2", new = c("TEST2a", "TEST2b"), data.period = c(startYear1,endYear1), wprob.period = c(startYear2,endYear2))
 #	)
-# @param data.period object of class "integer" giving the start/end years of the range targeted for the
-# data reallocation.
-# @param wprob.period object of class "integer" giving the start/end years of the range chosen to compute
-# the relative contributions of catch of each new flagstate. Default value is c(1988,1992)
-# @return an object of class "data.frame" giving reallocated statistics for the data.period selected
+# @return an object of class "data.frame" giving reallocated statistics for the data.period(s) selected
 # and the new flagstates defined in the 'params' argument
 #
-reallocateOldFlagstateCatchesAll <- function(stats, params, data.period = c(1950,1987), wprob.period = c(1988,1992)){
+reallocateOldFlagstateCatchesAll <- function(stats, params){
 	new.stats <- stats
 	invisible(
 		lapply(params,
 			function(flagstates){
-				new.stats <<- reallocateOldFlagstateCatches(new.stats, flagstates, data.period = data.period, wprob.period = wprob.period)
+				new.stats <<- reallocateOldFlagstateCatches(new.stats, flagstates)
 			}
 		)
 	)
@@ -153,10 +167,11 @@ reallocateOldFlagstateCatchesAll <- function(stats, params, data.period = c(1950
 processStartingTime <- Sys.time()
 cat(paste0("Started at: ", as.character(processStartingTime),"\n"))
 
-result <- reallocateOldFlagstateCatches(stats, flagParams[[1]], data.period = c(1950,1987), wprob.period = c(1988,1992))
+#only USSR
+#result <- reallocateOldFlagstateCatches(stats, flagParams[[1]])
 
 #the next line is to trigger instead in case you have more than one 'flagstates' definition (e.g. adding Yugoslavia, etc)
-#result <- reallocateOldFlagstateCatchesAll(stats, flagParams, data.period = c(1950,1987), wprob.period = c(1988,1992))
+result <- reallocateOldFlagstateCatchesAll(stats, flagParams)
 
 #csv output
 write.table(result, "CaptureView-modified.csv", row.names = FALSE, col.names = TRUE, sep=",", dec=".")
