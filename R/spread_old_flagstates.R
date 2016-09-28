@@ -56,6 +56,12 @@ flagParams = list(
 		new = c("SVN", "HRV", "SCG", "BIH"),
 		data.period = c(1950,1991),
 		wprob.period = c(1992,1996)
+	),
+	list(
+		old = "SCG",
+		new = c("MNE"),
+		data.period = c(1950,2005),
+		wprob.period = c(2006, 2010)
 	)
 )
 
