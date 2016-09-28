@@ -14,6 +14,9 @@
 #setwd("D:/Mes documents/Documents/DEV/R/sdi/20160913_SPREAD")
 options(stringsAsFactors = FALSE)
 
+#clean environment
+rm(list = ls())
+
 #package requirements
 #==========================================================================
 if(!require(spread)){
