@@ -5,32 +5,34 @@ require(RCurl)
 require(XML)
 require(rgeos)
 require(maptools)
+require(httr)
 
 .default_options <- options()
-options(encoding = "UTF-8")
+options(encoding="UTF-8")
 options(stringsAsFactors = FALSE)
 
 #working directory
-origin.path <- "D:/Mes documents/Documents/DEV/R/firms/results" #TODO to be defined for execution with FI
+origin.path <- "/home/emmanuel.blondel/firms"
 setwd(origin.path)
 path <- paste(origin.path, format(Sys.time(), "%Y%m%d"), sep="/")
 if(!dir.exists(path)) dir.create(path)
 if(dir.exists(path)) setwd(path) else stop("Target directory doesn't exist")
 
 #variables
-
-#variables
 firmsHost <- "http://www.fao.org"
+gsURL <- paste0(firmsHost, "/figis/geoserver")
+gsCredentials <- "user:pwd"
 firmsDomains <- c("resource", "fishery")
 runParallel <- TRUE
 runCores <- 8
 
 system.time(
   for(firmsDomain in firmsDomains) {
-
-    refs <- fetchFactsheetReferences(firmsHost, firmsDomain, verbose = TRUE)
-    items <- refs$factsheet
     
+    #items
+    refs <- fetchFactsheetReferences(firmsHost, firmsDomain, verbose = TRUE)
+    items = refs$factsheet
+      
     #running the data processing
     #---------------------------
     #with exporting partial results (polygon and point)
@@ -39,25 +41,58 @@ system.time(
     system.time(
       capture.output(
         result <- invisible(buildSpatialDataset(
-                    host = firmsHost, domain = firmsDomain,
-                    cleanGeom = TRUE, cleanStrategy = "BUFFER",
-                    unionStrategy = "bbox",
-                    runParallel = runParallel, runCores = runCores,
-                    exportPartialResults = FALSE, exportPath = getwd(), verbose = TRUE
-                  )),
+          host = firmsHost, domain = firmsDomain,
+          cleanGeom = TRUE, cleanStrategy = "BUFFER",
+          unionStrategy = "bbox",
+          runParallel = runParallel, runCores = runCores,
+          exportPartialResults = FALSE, exportPath = getwd(), verbose = TRUE
+        )),
         file = paste0(firmsDomain, ".log")
       )
     )
-
+    
+    #try to apply long dash (alt+0150) everywhere
+    #TODO investigate issue of Geoserver with DBF UTF-8 charset
+    #result$TITLE <- gsub("-", "–", result$TITLE, fixed = TRUE)
+    result$TITLE <- gsub("–", "-", result$TITLE, fixed = TRUE)
+    
     #export results
     #to ESRI Shapefile
-    exportFeatures(result, file.path = path, file.name = outputName)
-    zip(zipfile = paste0(outputName, ".zip"), files = list.files(pattern = outputName))
-
+    Sys.getlocale("LC_CTYPE")
+    getCPLConfigOption("SHAPE_ENCODING")
+    encoding <- "UTF-8"
+    setCPLConfigOption("SHAPE_ENCODING", encoding)
+    writeOGR(result, ".", outputName, driver="ESRI Shapefile", overwrite_layer=T)
+    
+    writeEncFile <- function(extension, encoding){
+      encFile <- file(paste("test_encoding", extension, sep="."))
+      writeLines(encoding, encFile, sep="")
+      unlink(encFile)
+    }
+    writeEncFile("cst", encoding)
+    writeEncFile("cpg", encoding)
+    
+    #to zip (for upload)
+    zipfilename <- paste0(outputName, ".zip")
+    zip(zipfile = zipfilename, files = list.files(pattern = outputName))
+  
     #to geojson (for preview)
     file <- paste0(outputName, ".geojson")
     writeOGR(result, file, outputName, driver='GeoJSON', check_exists = FALSE)
-
+    setCPLConfigOption("SHAPE_ENCODING", NULL) #reset encoding shape option
+        
+    #publish to Geoserver
+    PUT(
+      url = paste0(gsURL,"/rest/workspaces/firms/datastores/firms_shapefiles/file.shp?update=overwrite"),
+      add_headers(
+        "User-Agent" = "firms-viewer",
+        "Authorization" = paste("Basic", RCurl::base64(gsCredentials)),
+        "Content-type" = "application/zip"
+      ),    
+      body = upload_file(zipfilename),
+      verbose()
+    )
+    
     #check missing factsheets
     missingItems <- items[!(items %in% unique(result@data$FIGIS_ID))]
     if(length(missingItems) > 0){
@@ -65,7 +100,8 @@ system.time(
       missingItems <- missingItems[order(missingItems)]
       print(sprintf("Missing '%s' items: [%s]", firmsDomain, paste(missingItems, collapse=",")))
     }
-
+    
   }
 )
+
 options(.default_options)
