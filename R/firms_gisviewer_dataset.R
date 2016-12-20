@@ -101,8 +101,8 @@ system.time(
     setCPLConfigOption("SHAPE_ENCODING", NULL) #reset encoding shape option
         
     #publish to Geoserver
-    gsMan <- GSDatastoreManager$new(url = gsUrl, user = gsUser, pwd = gsPwd)
-    gsMan$uploadShapefile(workspace = "firms", datastore = "firms_shapefiles", endpoint = "file",
+    gsMan <- GSDataStoreManager$new(url = gsUrl, user = gsUser, pwd = gsPwd)
+    gsMan$uploadShapefile(workspace = "firms", dataStore = "firms_shapefiles", endpoint = "file",
                           configure = "none", update = "overwrite", zipfilename, "UTF-8")
     
     #check missing factsheets
