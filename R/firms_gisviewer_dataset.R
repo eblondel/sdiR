@@ -1,11 +1,29 @@
 #packages
-require(RFirmsGeo)
-require(RFigisGeo)
+#--------
+#core packages
 require(RCurl)
 require(XML)
 require(rgeos)
 require(maptools)
-require(httr)
+#FIRMS GIS production functionalities
+if(!require(RFirmsGeo)){
+  require(devtools)
+  install_github("openfigis/RFirmsGeo")
+  require(RFirmsGeo)
+}
+#Common FIGIS functionalities
+if(!require(RFigisGeo)){
+  require(devtools)
+  install_github("openfigis/RFigisGeo")
+  require(RFigisGeo)
+}
+#R interface to GeoServer REST API
+if(!require(geosapi)){
+  require(devtools)
+  install_github("eblondel/geosapi")
+  require(geosapi)
+}
+
 
 .default_options <- options()
 options(encoding="UTF-8")
@@ -21,7 +39,8 @@ if(dir.exists(path)) setwd(path) else stop("Target directory doesn't exist")
 #variables
 firmsHost <- "http://www.fao.org"
 gsURL <- paste0(firmsHost, "/figis/geoserver")
-gsCredentials <- "user:pwd"
+gsUser <- "user"
+gsPwd <- "pwd"
 firmsDomains <- c("resource", "fishery")
 runParallel <- TRUE
 runCores <- 8
@@ -82,16 +101,9 @@ system.time(
     setCPLConfigOption("SHAPE_ENCODING", NULL) #reset encoding shape option
         
     #publish to Geoserver
-    PUT(
-      url = paste0(gsURL,"/rest/workspaces/firms/datastores/firms_shapefiles/file.shp?update=overwrite"),
-      add_headers(
-        "User-Agent" = "firms-viewer",
-        "Authorization" = paste("Basic", RCurl::base64(gsCredentials)),
-        "Content-type" = "application/zip"
-      ),    
-      body = upload_file(zipfilename),
-      verbose()
-    )
+    gsMan <- GSDatastoreManager$new(url = gsUrl, user = gsUser, pwd = gsPwd)
+    gsMan$uploadShapefile(workspace = "firms", datastore = "firms_shapefiles", endpoint = "file",
+                          configure = "none", update = "overwrite", zipfilename, "UTF-8")
     
     #check missing factsheets
     missingItems <- items[!(items %in% unique(result@data$FIGIS_ID))]
