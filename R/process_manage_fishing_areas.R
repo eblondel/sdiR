@@ -16,6 +16,7 @@ require(rgdal)
 require(rgeos)
 require(RFigisGeo)
 require(cleangeo)
+require(geosphere)
 
 #get fishery statistical area levels
 getFisheryStatAreas <- function(){
@@ -174,7 +175,7 @@ manageFisheryStatAreas <- function(features, cleanGeom = TRUE, cleanStrategy = "
 }
 
 #main function to erase fishery stat areas
-eraseFisheryStatAreas <- function(features, eraser, cleanGeom = TRUE, cleanStrategy = "POLYGONATION", computeSurfaces = FALSE){
+eraseFisheryStatAreas <- function(features, eraser, cleanGeom = TRUE, cleanStrategy = "POLYGONATION", computeSurfaces = TRUE){
 	
 	if(cleanGeom){
 		features <- clgeo_Clean(features, strategy = cleanStrategy)
@@ -190,13 +191,14 @@ eraseFisheryStatAreas <- function(features, eraser, cleanGeom = TRUE, cleanStrat
 	if(!is.null(out.sp)){
 		out.sp <- spChFIDs(out.sp, row.names(features@data))
 		areaCRS <- CRS("+proj=eck4 +lon_0=Central Meridian +x_0=False Easting +y_0=False Northing")
-		out.df <- features@data
 		if(computeSurfaces){
 			out.df <- cbind(
 			  features@data,
-			  SURFACE = gArea(spTransform(out.sp, areaCRS)),
+			  SURFACE = geosphere::areaPolygon(out.sp),
 			  stringsAsFactors = FALSE
 			)
+		}else{
+			out.df <- features@data
 		}
 		row.names(out.df) <- row.names(features@data)
 		out <- SpatialPolygonsDataFrame(Sr = out.sp, data = out.df, match.ID = TRUE)
