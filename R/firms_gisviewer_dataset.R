@@ -38,7 +38,7 @@ if(dir.exists(path)) setwd(path) else stop("Target directory doesn't exist")
 
 #variables
 firmsHost <- "http://www.fao.org"
-gsURL <- paste0(firmsHost, "/figis/geoserver")
+gsUrl <- paste0(firmsHost, "/figis/geoserver")
 gsUser <- "user"
 gsPwd <- "pwd"
 firmsDomains <- c("resource", "fishery")
