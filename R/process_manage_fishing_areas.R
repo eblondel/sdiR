@@ -28,7 +28,7 @@ getFisheryStatAreas <- function(){
 }
 
 #dissolve feature
-dissolveFeature <- function(area, features, cleanGeom = TRUE){
+dissolveFeature <- function(area, features, cleanGeom = TRUE, cleanStrategy = "POLYGONATION"){
 	
 	#proceed to the build
 	areaCode = NULL
@@ -39,11 +39,11 @@ dissolveFeature <- function(area, features, cleanGeom = TRUE){
 	#process the geometry
 	out.sp = NULL
 	if(cleanGeom){
-		features <- clgeo_Clean(features)
+		features <- clgeo_Clean(features, strategy = cleanStrategy)
 	}
 	out.sp <- gUnaryUnion(features)
 	if(cleanGeom){
-		out.sp <- clgeo_Clean(out.sp)
+		out.sp <- clgeo_Clean(out.sp, strategy = cleanStrategy)
 	}
 	
 	#area status (officially endorsed vs. draft)
@@ -140,7 +140,7 @@ dissolveFeature <- function(area, features, cleanGeom = TRUE){
 
 
 #area-based function to create new (dissolved) area
-dissolveByFisheryArea <- function(area, features, cleanGeom = TRUE){
+dissolveByFisheryArea <- function(area, features, cleanGeom = TRUE, cleanStrategy = "POLYGONATION"){
 
 	#get unique list of codes
 	areaCodes <- unique(features@data[,as(area$propertyName,"character")])
@@ -151,7 +151,7 @@ dissolveByFisheryArea <- function(area, features, cleanGeom = TRUE){
 					  function(x){
 						subcol <- features[!is.na(features@data[,as(area$propertyName,"character")]) &
 										   features@data[,as(area$propertyName,"character")] == x,]
-						out <- dissolveFeature(area, subcol, cleanGeom)
+						out <- dissolveFeature(area, subcol, cleanGeom, cleanStrategy)
 						return(out)
 					  })
 	sp.list <- sp.list[!sapply(sp.list, is.null)]
@@ -159,13 +159,13 @@ dissolveByFisheryArea <- function(area, features, cleanGeom = TRUE){
 }
 
 #main function to manage fishery stat areas
-manageFisheryStatAreas <- function(features, cleanGeom = TRUE){
+manageFisheryStatAreas <- function(features, cleanGeom = TRUE, cleanStrategy = "POLYGONATION"){
 
 	areas <- getFisheryStatAreas()
 	sp.list <- lapply(1:nrow(areas),
 								function(x){
 									area <- areas[x,]
-									out <- dissolveByFisheryArea(area, features, cleanGeom)
+									out <- dissolveByFisheryArea(area, features, cleanGeom, cleanStrategy)
 									return(out)
 								})
 	sp.list <- sp.list[!sapply(sp.list, is.null)]
@@ -174,15 +174,15 @@ manageFisheryStatAreas <- function(features, cleanGeom = TRUE){
 }
 
 #main function to erase fishery stat areas
-eraseFisheryStatAreas <- function(features, eraser, cleanGeom = TRUE){
+eraseFisheryStatAreas <- function(features, eraser, cleanGeom = TRUE, cleanStrategy = "POLYGONATION", computeSurfaces = FALSE){
 	
 	if(cleanGeom){
-		features <- clgeo_Clean(features)
+		features <- clgeo_Clean(features, strategy = cleanStrategy)
 		eraser <- clgeo_Clean(eraser)
 	}
 	out.sp <- gDifference(features, eraser, byid = TRUE)
 	if(cleanGeom){
-		out.sp <- clgeo_Clean(out.sp)
+		out.sp <- clgeo_Clean(out.sp, strategy = cleanStrategy)
 	}
 	
 	#wrap output as SpatialPolygonsDataFrame object
@@ -190,10 +190,14 @@ eraseFisheryStatAreas <- function(features, eraser, cleanGeom = TRUE){
 	if(!is.null(out.sp)){
 		out.sp <- spChFIDs(out.sp, row.names(features@data))
 		areaCRS <- CRS("+proj=eck4 +lon_0=Central Meridian +x_0=False Easting +y_0=False Northing")
-		out.df <- cbind(
-		  features@data,
-		  SURFACE = gArea(spTransform(out.sp, areaCRS)),
-		  stringsAsFactors = FALSE)
+		out.df <- features@data
+		if(computeSurfaces){
+			out.df <- cbind(
+			  features@data,
+			  SURFACE = gArea(spTransform(out.sp, areaCRS)),
+			  stringsAsFactors = FALSE
+			)
+		}
 		row.names(out.df) <- row.names(features@data)
 		out <- SpatialPolygonsDataFrame(Sr = out.sp, data = out.df, match.ID = TRUE)
 	}
