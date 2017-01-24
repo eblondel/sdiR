@@ -215,17 +215,17 @@ if(TRUE){
 	
 	#compute and export 'FAO_AREAS'
 	result <- manageFisheryStatAreas(data)
-	exportFeatures(result, file.path = path, file.name = "FAO_AREAS")
+	exportFeatures(result, file.path = path, file.name = "FAO_AREAS", tozip = TRUE)
 	
 	#compute and export 'FAO_AREAS_SINGLEPART' ('FAO_AREAS' with Polygons instead of MultiPolygons)
 	result_singlepart <- disaggregate(result)
-	exportFeatures(result_singlepart, file.path = path, file.name = "FAO_AREAS_SINGLEPART")
+	exportFeatures(result_singlepart, file.path = path, file.name = "FAO_AREAS_SINGLEPART", tozip = TRUE)
 	
 	#compute and export 'FAO_AREAS_ERASE'
 	continent <- readWFS("http://figisapps.fao.org/figis/geoserver.dv.2/fifao/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=fifao:UN_CONTINENT2")
 	proj4string(continent) <- proj4string(data)
 	result_erased <- eraseFisheryStatAreas(result, continent)
-	exportFeatures(result_erased, file.path = path, file.name = "FAO_AREAS_ERASE")
+	exportFeatures(result_erased, file.path = path, file.name = "FAO_AREAS_ERASE", tozip = TRUE)
 	
 	#surfaces table
 	write.table(result_erased@data,"fsa_surfaces.csv", sep=",", row.names=FALSE, na="")
