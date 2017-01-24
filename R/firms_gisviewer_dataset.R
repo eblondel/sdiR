@@ -84,7 +84,7 @@ system.time(
     writeOGR(result, ".", outputName, driver="ESRI Shapefile", overwrite_layer=T)
     
     writeEncFile <- function(extension, encoding){
-      encFile <- file(paste("test_encoding", extension, sep="."))
+      encFile <- file(paste(outputName, extension, sep="."))
       writeLines(encoding, encFile, sep="")
       unlink(encFile)
     }
