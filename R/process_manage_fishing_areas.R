@@ -12,6 +12,8 @@
 # @date 2015/10/27
 #
 require(sp)
+require(raster)
+require(maptools)
 require(rgdal)
 require(rgeos)
 require(RFigisGeo)
@@ -211,7 +213,17 @@ if(TRUE){
 
 	path = "your_path"
 	setwd(path)
-	data <- readWFS("http://figisapps.fao.org/figis/geoserver.dv.2/fifao/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=fifao:FAO_AREAS_MASTER")
+	
+	#read master data
+	isLocalMaster <- TRUE
+	if(isLocalMaster){
+		data <- readShapePoly("FAO_AREAS_MASTER", proj4string = CRS("+init=epsg:4326"))
+	}else{
+		data <- readWFS("http://figisapps.fao.org/figis/geoserver.dv.2/fifao/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=fifao:FAO_AREAS_MASTER")
+	}
+	
+	#crop at North pole (-89.99 instead of -90) to avoid reprojection issues when exploiting the data
+	data <- raster::crop(data, extent(-180,180,-88, 89.99))
 	
 	#compute and export 'FAO_AREAS'
 	result <- manageFisheryStatAreas(data)
