@@ -101,7 +101,7 @@ system.time(
     setCPLConfigOption("SHAPE_ENCODING", NULL) #reset encoding shape option
         
     #publish to Geoserver
-    gsMan <- GSManager$new(url = gsUrl, user = gsUser, pwd = gsPwd)
+    gsMan <- GSManager$new(url = gsUrl, user = gsUser, pwd = gsPwd, logger = "DEBUG")
     gsMan$uploadShapefile(ws = "firms", ds = "firms_shapefiles", endpoint = "file",
                           configure = "none", update = "overwrite", zipfilename, "UTF-8")
     
