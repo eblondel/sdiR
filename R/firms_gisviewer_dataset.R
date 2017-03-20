@@ -23,6 +23,12 @@ if(!require(geosapi)){
   install_github("eblondel/geosapi")
   require(geosapi)
 }
+#Facilities to generate OGC/ISO 19115:2003/19139 metadata
+if(!require(geometa)){
+  require(devtools)
+  install_github("eblondel/geometa")
+  require(geometa)
+}
 
 
 .default_options <- options()
@@ -104,6 +110,9 @@ system.time(
     gsMan <- GSManager$new(url = gsUrl, user = gsUser, pwd = gsPwd, logger = "DEBUG")
     gsMan$uploadShapefile(ws = "firms", ds = "firms_shapefiles", endpoint = "file",
                           configure = "none", update = "overwrite", zipfilename, "UTF-8")
+    #create & publish metadata
+    resultMeta <- buildSpatialMetadata(result)
+    #TODO publication (insert/update)
     
     #check missing factsheets
     missingItems <- items[!(items %in% unique(result@data$FIGIS_ID))]
