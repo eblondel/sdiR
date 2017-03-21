@@ -83,12 +83,8 @@ system.time(
     
     #export results
     #to ESRI Shapefile
-    Sys.getlocale("LC_CTYPE")
-    getCPLConfigOption("SHAPE_ENCODING")
-    encoding <- "UTF-8"
-    setCPLConfigOption("SHAPE_ENCODING", encoding)
+    setCPLConfigOption("SHAPE_ENCODING", NULL)
     writeOGR(result, ".", outputName, driver="ESRI Shapefile", overwrite_layer=T)
-    
     writeEncFile <- function(extension, encoding){
       encFile <- file(paste(outputName, extension, sep="."))
       writeLines(encoding, encFile, sep="")
@@ -104,7 +100,6 @@ system.time(
     #to geojson (for preview)
     file <- paste0(outputName, ".geojson")
     writeOGR(result, file, outputName, driver='GeoJSON', check_exists = FALSE)
-    setCPLConfigOption("SHAPE_ENCODING", NULL) #reset encoding shape option
         
     #publish to Geoserver
     gsMan <- GSManager$new(url = gsUrl, user = gsUser, pwd = gsPwd, logger = "DEBUG")
