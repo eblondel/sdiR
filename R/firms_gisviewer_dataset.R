@@ -85,13 +85,13 @@ system.time(
     #to ESRI Shapefile
     setCPLConfigOption("SHAPE_ENCODING", NULL)
     writeOGR(result, ".", outputName, driver="ESRI Shapefile", overwrite_layer=T)
-    writeEncFile <- function(extension, encoding){
+    writeEncFile <- function(extension, encoding = "UTF-8"){
       encFile <- file(paste(outputName, extension, sep="."))
       writeLines(encoding, encFile, sep="")
       unlink(encFile)
     }
-    writeEncFile("cst", encoding)
-    writeEncFile("cpg", encoding)
+    writeEncFile("cst")
+    writeEncFile("cpg")
     
     #to zip (for upload)
     zipfilename <- paste0(outputName, ".zip")
