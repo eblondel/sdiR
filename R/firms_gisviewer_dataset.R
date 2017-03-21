@@ -44,7 +44,8 @@ if(dir.exists(path)) setwd(path) else stop("Target directory doesn't exist")
 
 #variables
 firmsHost <- "http://www.fao.org"
-gsUrl <- paste0(firmsHost, "/figis/geoserver")
+gsProdUrl <- paste0(firmsHost, "/figis/geoserver")
+gsTestUrl <- ""
 gsUser <- "user"
 gsPwd <- "pwd"
 firmsDomains <- c("resource", "fishery")
@@ -102,9 +103,14 @@ system.time(
     writeOGR(result, file, outputName, driver='GeoJSON', check_exists = FALSE)
         
     #publish to Geoserver
-    gsMan <- GSManager$new(url = gsUrl, user = gsUser, pwd = gsPwd, logger = "DEBUG")
-    gsMan$uploadShapefile(ws = "firms", ds = "firms_shapefiles", endpoint = "file",
-                          configure = "none", update = "overwrite", zipfilename, "UTF-8")
+    endpoints <- gsProdUrl
+    if(gsTestUrl != "") endpoints <- c(gsTestUrl, gsProdUrl)
+    for(endpoint in endpoints){
+      gsMan <- GSManager$new(url = endpoint, user = gsUser, pwd = gsPwd, logger = "INFO")
+      gsMan$uploadShapefile(ws = "firms", ds = "firms_shapefiles", endpoint = "file",
+                            configure = "none", update = "overwrite", zipfilename, "UTF-8")
+    }
+    
     #create & publish metadata
     resultMeta <- buildSpatialMetadata(result)
     #TODO publication (insert/update)
