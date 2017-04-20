@@ -9,7 +9,7 @@
 
 # setwd("") Uncomment to setup the working directory; remember to escape "\" in the windows path with "\\"
 #function to normalize the SST computation results for a given file
-normalizeZonalStatistics <- function(file, variable){
+normalizeZonalStatistics <- function(file, variable, extractAreaCodes = FALSE){
 
 	#extract record from name
 	filename <- unlist(strsplit(file,"/"))
@@ -27,26 +27,36 @@ normalizeZonalStatistics <- function(file, variable){
 	#read data
 	df <- read.csv(file)
 	
-	#extract area codes (NOTE: a new code combination is used called SSTNPPCODN in place of the orginal SSTNPPCODE)
-	areas <- as.data.frame(
-		do.call("rbind",strsplit(as.character(df[,"SSTNPPCODN"]),"_")),
-		stringsAsFactors = FALSE
-	)
-
-	colnames(areas) <- c("EEZ", "LME", "FSA")
-	df <- cbind(
-		VARIABLE = rep(variable, nrow(df)),
-		areas,
-		ZONE_CODE = df[,3],
+    #prepare df.new
+    df.new <- data.frame(VARIABLE = rep(variable, nrow(df)), stringsAsFactors = FALSE) 
+	
+    #extract area codes
+    areaCodeNb <- 0
+    if(extractAreaCodes){
+        #(NOTE: a new code combination is used called SSTNPPCODN in place of the orginal SSTNPPCODE)
+        areas <- as.data.frame(
+            do.call("rbind",strsplit(as.character(df[,"SSTNPPCODN"]),"_")),
+            stringsAsFactors = FALSE
+        )
+        colnames(areas) <- c("EEZ", "LME", "FSA")
+        df.new <- cbind(df.new, areas)
+         areaCodeNb <- 3
+    }
+	
+    statColIdx <- if(extractAreaCodes) 6:11 else 5:10
+	df.new <- cbind(
+		df.new,
+		ZONE_CODE = df[,ifelse(extractAreaCodes,3,2)],
 		YEAR = rep(year,nrow(df)),
 		MONTH = rep(month,nrow(df)),
-		df[,6:11],
-		stringsAsFactors = FALSE)
-	df.names <- colnames(df)
+		df[,statColIdx],
+		stringsAsFactors = FALSE
+    )
+	df.names <- colnames(df.new)
 		
 	#normalize
 	statistics <- c("MIN", "MAX", "RANGE", "MEAN" , "STD", "SUM") 
-	output <- reshape(df, idvar = df.names[1:7], varying = statistics,  times = statistics,
+	output <- reshape(df.new, idvar = df.names[1:(4+areaCodeNb)], varying = statistics,  times = statistics,
 				timevar = "STATISTIC", v.names = "VALUE", direction = "long")
 	row.names(output) <- 1:nrow(output)
 	return(output)
@@ -54,7 +64,7 @@ normalizeZonalStatistics <- function(file, variable){
 }
 
 #global function to normalize and merge all SST computation results
-fetchZonalStatistics <- function(dir = getwd(), variable){
+fetchZonalStatistics <- function(dir = getwd(), variable, extractAreaCodes = FALSE){
 	
 	#variable
 	#modified to account for different data using other NPP models
@@ -65,21 +75,23 @@ fetchZonalStatistics <- function(dir = getwd(), variable){
 				  pattern = paste0("[a-z]", variable, "[a-z][0-9]+.csv"))
 	
 	#process results
-	out <- do.call("rbind",lapply(files, normalizeZonalStatistics, variable))	
+	out <- do.call("rbind",lapply(files, normalizeZonalStatistics, variable, extractAreaCodes))	
 	return(out)
 }
 
 #global function to merge results for several variables
 #modified to account for different data using other NPP models
-fetchZonalStatisticsAll <- function(dir = getwd(), variables = c("CBPM", "EPPL", "SST", "NPP", "CHL")){
+fetchZonalStatisticsAll <- function(dir = getwd(), variables = c("CBPM", "EPPL", "SST", "NPP", "CHL"), extractAreaCodes = FALSE){
 	out <- do.call("rbind", lapply(
 		variables,
-		function(x) { fetchZonalStatistics(dir, x)}))
+		function(x) { fetchZonalStatistics(dir, x, extractAreaCodes)}))
 	out <- cbind(RowID = 1:nrow(out), out)
 	return(out)
 }
 
-
 #run the process
-result <- fetchZonalStatisticsAll()
-write.csv(result, file = "ZonalStatistics.csv", row.names = FALSE)
+#use extractAreaCodes = TRUE if there is area code concatenation field such as 'SSTNPPCODN' in the source files, to extract as columns
+result <- fetchZonalStatisticsAll(extractAreaCodes = FALSE)
+baseName <- sprintf("ZonalStatistics_%s_",paste(unique(result$VARIABLE), collapse="-"))
+outputFile<- paste0(baseName, format(Sys.time(),"%Y%m%d%H%M%S"),".csv")
+write.csv(result, file = outputFile, row.names = FALSE)
