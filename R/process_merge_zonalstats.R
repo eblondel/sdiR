@@ -9,13 +9,14 @@
 
 # setwd("") Uncomment to setup the working directory; remember to escape "\" in the windows path with "\\"
 #function to normalize the SST computation results for a given file
-normalizeZonalStatistics <- function(file, variable, extractAreaCodes = FALSE, chunks = 0){
+normalizeZonalStatistics <- function(file, variable, extractAreaCodes = FALSE, chunks = 0, suffix = NULL){
 
 	#extract record from name
 	filename <- unlist(strsplit(file,"/"))
 	filename <- filename[length(filename)]
 	record <- substr(filename, as.numeric(regexpr("[0-9]+",filename)), nchar(filename)-4)
     if(chunks>0) record <- unlist(strsplit(record,"_"))[1]
+    if(!is.null(suffix)) record <- unlist(strsplit(record, suffix))[1]
 	
 	#process time dimension	
 	year <- as.numeric(substr(record, 1, 4))
@@ -65,7 +66,7 @@ normalizeZonalStatistics <- function(file, variable, extractAreaCodes = FALSE, c
 }
 
 #global function to normalize and merge all SST computation results
-fetchZonalStatistics <- function(dir = getwd(), variable, extractAreaCodes = FALSE, chunks = 0){
+fetchZonalStatistics <- function(dir = getwd(), variable, extractAreaCodes = FALSE, chunks = 0, suffix = NULL){
 	
 	#variable
 	#modified to account for different data using other NPP models
@@ -74,26 +75,28 @@ fetchZonalStatistics <- function(dir = getwd(), variable, extractAreaCodes = FAL
 	#list files
     suffixPattern <- ""
     if(chunks > 0) suffixPattern <- paste0("_[",1,"-",chunks,"]")
+    if(!is.null(suffix)) suffixPattern <- suffix
 	files <- list.files(path = dir, full.names = TRUE, ignore.case = TRUE,pattern = paste0("[a-z]", variable, "[a-z][0-9]+", suffixPattern, ".csv"))
 	
 	#process results
-	out <- do.call("rbind",lapply(files, normalizeZonalStatistics, variable, extractAreaCodes, chunks))	
+	out <- do.call("rbind",lapply(files, normalizeZonalStatistics, variable, extractAreaCodes, chunks, suffix))	
 	return(out)
 }
 
 #global function to merge results for several variables
 #modified to account for different data using other NPP models
-fetchZonalStatisticsAll <- function(dir = getwd(), variables = c("CBPM", "EPPL", "SST", "NPP", "CHL"), extractAreaCodes = FALSE, chunks = 0){
+fetchZonalStatisticsAll <- function(dir = getwd(), variables = c("CBPM", "EPPL", "SST", "NPP", "CHL"), extractAreaCodes = FALSE,
+                                    chunks = 0, suffix = NULL){
 	out <- do.call("rbind", lapply(
 		variables,
-		function(x) { fetchZonalStatistics(dir, x, extractAreaCodes, chunks)}))
+		function(x) { fetchZonalStatistics(dir, x, extractAreaCodes, chunks, suffix)}))
 	out <- cbind(RowID = 1:nrow(out), out)
 	return(out)
 }
 
 #run the process
 #use extractAreaCodes = TRUE if there is area code concatenation field such as 'SSTNPPCODN' in the source files, to extract as columns
-result <- fetchZonalStatisticsAll(extractAreaCodes = FALSE, chunks = 7)
+result <- fetchZonalStatisticsAll(extractAreaCodes = FALSE)
 baseName <- sprintf("ZonalStatistics_%s_",paste(unique(result$VARIABLE), collapse="-"))
 outputFile<- paste0(baseName, format(Sys.time(),"%Y%m%d%H%M%S"),".csv")
 write.csv(result, file = outputFile, row.names = FALSE)
