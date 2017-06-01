@@ -87,7 +87,16 @@
             }
         }
     }else if(sqlType == "INSERT"){
-        stop("INSERT routine to do")
+        trgFields <- c("THE_GEOM", names(trgValues))
+        trgValues <- paste(as.vector( sapply(trgValues, function(x){
+           newVal <- x;
+           if(class(x)=="character"){
+               newVal <- paste0("'",newVal,"'")
+           };
+           return(newVal)
+        })),collapse=", ")
+        sql <- paste0(sql, "INSERT INTO ", trgTable, " (", paste(trgFields, collapse=", "), ") ")
+        sql <- paste0(sql, "VALUES(SDO_GEOMETRY(", thegeomField, ", 4326), ", trgValues, ");\n\n")
     }else{
         stop(sprintf("SQL type %s not supported by this routine!", sqlType))
     }
@@ -110,7 +119,8 @@
         headerline <- paste0(headerline, "-- SQL automatically generated on ", date(), "\n")
         headerline <- paste0(headerline, "-- User parameters:\n")
         headerline <- paste0(headerline, "--   * Target table: ", trgTable, "\n")
-        headerline <- paste0(headerline, "--   * Target table filters: ", paste(sapply(names(trgFilters), function(x){paste(x, "=", trgFilters[[x]])}), collapse="; "), "\n")        
+        headerline <- paste0(headerline, "--   * Target table values: ", ifelse(is.null(trgValues), "-", paste(sapply(names(trgValues), function(x){paste(x, "=", trgValues[[x]])}), collapse="; ")), "\n")  
+        headerline <- paste0(headerline, "--   * Target table filters: ", ifelse(is.null(trgFilters), "-", paste(sapply(names(trgFilters), function(x){paste(x, "=", trgFilters[[x]])}), collapse="; ")), "\n")     
         headerline <- paste0(headerline, "--   * SQL Statement type: ", sqlType, "\n")
         headerline <- paste0(headerline, "--   * Output file name: ", filename, "\n")
         headerline <- paste0(headerline, "\n\n")
