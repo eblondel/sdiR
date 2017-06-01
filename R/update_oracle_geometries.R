@@ -17,7 +17,7 @@
  }
  
 #prepare a SQL statement (SQL or PL/SQL depending on the length of geometry string)
- prepareSQLStatement <- function(wkt, sqlType, trgTable, trgFilter = NULL){
+ prepareSQLStatement <- function(wkt, sqlType, trgTable, trgValues = NULL, trgFilters = NULL){
     sql <- ""
     chunkSize <- 4000 #limit of number of characters.
     chunks <- list()
@@ -49,28 +49,51 @@
         
     #sql statement UPDATE
     if(sqlType == "UPDATE"){
-        sql <- paste0(sql, "UPDATE ", trgTable, " ")
-        sql <- paste0(sql, "SET")
-        sql <- paste0(sql, " THE_GEOM = SDO_GEOMETRY(", thegeomField, ",4326)")
-        if(!is.null(trgFilter)){
-            if(is.list(trgFilter)){
-                filters <- names(trgFilter)
+        sql <- paste0(sql, "UPDATE ", trgTable, "\n")
+        sql <- paste0(sql, "SET\n\t")
+        sql <- paste0(sql, "THE_GEOM = SDO_GEOMETRY(", thegeomField, ",4326)")
+        
+        #eventual extra fields to update
+        if(is.list(trgValues)){
+           if(is.list(trgValues)){
+             values <- names(trgValues)
+             valueList <- lapply(values, function(x){
+               sqlValue <- trgValues[[x]]
+               if(class(sqlValue) == "character"){
+                 sqlValue <- paste0("'", sqlValue, "'")
+               }
+               sqlSetValue <- paste0(x, " = ", sqlValue)
+               return(sqlSetValue)
+             })
+             sql <- paste0(sql, ",\n\t")
+             sql <- paste0(sql, paste(valueList, collapse = ",\n\t"), "\n")
+           }
+        }
+        
+        #eventual filters to apply
+        if(!is.null(trgFilters)){
+            if(is.list(trgFilters)){
+                filters <- names(trgFilters)
                 filterList <- lapply(filters, function(x){
-                    sqlFilterValue <- trgFilter[[x]]
+                    sqlFilterValue <- trgFilters[[x]]
                     if(class(sqlFilterValue)=="character"){
                         sqlFilterValue <- paste0("'", sqlFilterValue, "'")
                     }
                     sqlFilter <- paste0(x, " = ", sqlFilterValue)
                     return(sqlFilter)
                 })
-                
-                sql <- paste0(sql, " WHERE ")
-                sql <- paste0(sql, paste(filterList, collapse = " AND "), ";\n\n")
+                sql <- paste0(sql, "WHERE ")
+                sql <- paste0(sql, paste(filterList, collapse = " AND "), ";\n")
             }
         }
+    }else if(sqlType == "INSERT"){
+        stop("INSERT routine to do")
     }else{
         stop(sprintf("SQL type %s not supported by this routine!", sqlType))
     }
+    
+    #commit
+    sql <- paste0(sql, "COMMIT;\n")
         
     if(byChunks){
         #end procedure
@@ -81,19 +104,19 @@
  }
  
  #write the SQL file calling prepareSQLStatement
- writeSQLFile <- function(filename, wkt, sqlType, trgTable, trgFilter = NULL){
+ writeSQLFile <- function(filename, wkt, sqlType, trgTable, trgValues = NULL, trgFilters = NULL){
         #write header for sql file    
         headerline = "-- R routine - https://github.com/openfigis/sdiR/tree/master/R/update_oracle_geometries.R \n"
         headerline <- paste0(headerline, "-- SQL automatically generated on ", date(), "\n")
         headerline <- paste0(headerline, "-- User parameters:\n")
         headerline <- paste0(headerline, "--   * Target table: ", trgTable, "\n")
-        headerline <- paste0(headerline, "--   * Target table filters: ", paste(sapply(names(trgFilter), function(x){paste(x, "=", trgFilter[[x]])}), collapse="; "), "\n")        
+        headerline <- paste0(headerline, "--   * Target table filters: ", paste(sapply(names(trgFilters), function(x){paste(x, "=", trgFilters[[x]])}), collapse="; "), "\n")        
         headerline <- paste0(headerline, "--   * SQL Statement type: ", sqlType, "\n")
         headerline <- paste0(headerline, "--   * Output file name: ", filename, "\n")
         headerline <- paste0(headerline, "\n\n")
        
         #call prepareSQLStatement
-        sql <- prepareSQLStatement(wkt, sqlType, trgTable, trgFilter)
+        sql <- prepareSQLStatement(wkt, sqlType, trgTable, trgValues, trgFilters)
         
         #merge & write
         sql <- paste0(headerline, sql)
@@ -101,7 +124,7 @@
 }
 
 #try it
-if(TRUE){
+if(F){
   geom <- "your WKT geometry too large to be managed with simple SQL"
-  writeSQLFile("myfile.sql", geom, "UPDATE", "RFB_COMP", trgFilter = list(RFB = "COMHAFAT-ATLAFCO"))
+  writeSQLFile("myfile.sql", geom, "UPDATE", "RFB_COMP", trgFilters = list(RFB = "COMHAFAT-ATLAFCO"))
 }
