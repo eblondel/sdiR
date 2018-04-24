@@ -56,6 +56,8 @@ gsProdUrl <- paste0(firmsHost, "/figis/geoserver")
 gsTestUrl <- ""
 gsUser <- "user"
 gsPwd <- "pwd"
+gnUser <- "user"
+gnPwd <- "pwd"
 firmsDomains <- c("resource", "fishery")
 runParallel <- TRUE
 runCores <- 8
@@ -118,11 +120,28 @@ system.time(
       gsMan$uploadShapefile(ws = "firms", ds = "firms_shapefiles", endpoint = "file",
                             configure = "none", update = "overwrite", zipfilename, "UTF-8")
     }
-    
-    #create & publish metadata
+
+    #create & publish metadata to Geonetwork
+    result$DOMAIN <- as.character(result$DOMAIN)
     resultMeta <- buildSpatialMetadata(result)
-    #TODO publication (insert/update)
-    
+    resultMetaXML <- resultMeta$encode()
+    gnMan <- GNManager$new(
+      url = "http://www.fao.org/geonetwork",
+      user = gnUser,
+      pwd = gnPwd,
+      version = "2.6.3",
+      logger = "DEBUG"
+    )
+    metaId <- gnMan$get(resultMeta$fileIdentifier, by = "uuid", output = "id")
+    if(is.null(metaId)){
+      created = gnMan$insertMetadata(xml = resultMetaXML, group = "1", category = "datasets")
+      config <- GNPrivConfiguration$new()
+      config$setPrivileges("all", c("view","dynamic","featured"))
+      gnMan$setPrivConfiguration(id = created, config = config)
+    }else{
+      updated = gnMan$updateMetadata(id = metaId, xml = resultMetaXML)
+    }
+
     #check missing factsheets
     missingItems <- items[!(items %in% unique(result@data$FIGIS_ID))]
     if(length(missingItems) > 0){
