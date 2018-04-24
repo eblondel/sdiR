@@ -5,6 +5,14 @@ require(RCurl)
 require(XML)
 require(rgeos)
 require(maptools)
+
+#OGC OWS client
+if(!require(ows4R)){
+  require(devtools)
+  install_github("eblondel/ows4R")
+  require(ows4R)
+}
+
 #FIRMS GIS production functionalities
 if(!require(RFirmsGeo)){
   require(devtools)
